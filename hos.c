@@ -13,8 +13,6 @@ cairo_t *cairo;
 
 zxWindow win;
 
-bool hos_pause = false;
-
 void hos_cairo_create(void)
 {
   cairo_surface = cairo_xlib_surface_create( zxdisplay, zxWindowBody(&win), zxvisual, zxWindowWidth(&win), zxWindowHeight(&win) );
@@ -117,11 +115,13 @@ void hos_draw_s(double width, double height, double red_rate)
   cairo_stroke( cairo );
 }
 
-const char label1[] = "Hyper Operating System";
-const char label2[] = "Ver 1.0";
-const char label3[] = "for ALL LABORS";
-const char label4[] = "(C) 1999";
-const char label5[] = "Shinohara Heavy Industry";
+const char *hos_label[] = {
+  "Hyper Operating System",
+  "Ver 1.0",
+  "for ALL LABORS",
+  "(C) 1999",
+  "Shinohara Heavy Industry",
+};
 
 #define FONT_NAME "Arial"
 
@@ -140,41 +140,27 @@ void hos_draw_label_one(const char *label, int n, int y)
 void hos_draw_label(double width, double height, int count)
 {
   static int n = 0;
-  int n1, n2, n3, n4, n5, nl;
+  int nhl, nl;
 
-  n1 = strlen(label1);
-  n2 = strlen(label2);
-  n3 = strlen(label3);
-  n4 = strlen(label4);
-  n5 = strlen(label5);
   cairo_set_source_rgba( cairo, 1, 1, 0, 1 );
   cairo_select_font_face( cairo, FONT_NAME, CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_BOLD );
   cairo_set_font_size( cairo, height/20 );
   if( count == 0 ) n = 0;
-  if( ( nl = ++n ) <= n1 ){
-    hos_draw_label_one( label1, nl, -7*height/20 );
-  } else{
-    hos_draw_label_one( label1, n1, -7*height/20 );
-    if( ( nl -= n1 ) <= n2 ){
-      hos_draw_label_one( label2, nl, -6*height/20 );
-    } else{
-      hos_draw_label_one( label2, n2, -6*height/20 );
-      if( ( nl -= n2 ) <= n3 ){
-        hos_draw_label_one( label3, nl, -5*height/20 );
-      } else{
-        hos_draw_label_one( label3, n3, -5*height/20 );
-        if( ( nl -= n3 ) <= n4 ){
-          hos_draw_label_one( label4, nl,  9*height/20 );
-        } else{
-          hos_draw_label_one( label4, n4,  9*height/20 );
-          if( ( nl -= n4 ) <= n5 ){
-            hos_draw_label_one( label5, nl, 10*height/20 );
-          } else
-            hos_draw_label_one( label5, n5, 10*height/20 );
-        }
-      }
-    }
-  }
+  nl = ++n;
+  nhl = strlen(hos_label[0]);
+  hos_draw_label_one( hos_label[0], zMin( nl, nhl ), -7*height/20 );
+  if( ( nl -= nhl ) < 0 ) return;
+  nhl = strlen(hos_label[1]);
+  hos_draw_label_one( hos_label[1], zMin( nl, nhl ), -6*height/20 );
+  if( ( nl -= nhl ) < 0 ) return;
+  nhl = strlen(hos_label[2]);
+  hos_draw_label_one( hos_label[2], zMin( nl, nhl ), -5*height/20 );
+  if( ( nl -= nhl ) < 0 ) return;
+  nhl = strlen(hos_label[3]);
+  hos_draw_label_one( hos_label[3], zMin( nl, nhl ),  9*height/20 );
+  if( ( nl -= nhl ) < 0 ) return;
+  nhl = strlen(hos_label[4]);
+  hos_draw_label_one( hos_label[4], zMin( nl, nhl ), 10*height/20 );
 }
 
 #define HOS_T 10
@@ -183,15 +169,27 @@ void hos_draw_label(double width, double height, int count)
 #define HOS_STOP2 2.5
 #define HOS_STOP3 3
 #define HOS_STOP4 4
-#define HOS_LABEL_T 200
+#define HOS_LABEL_T 150
 
 #define HOS_BLINK_T 5
-#define HOS_AUTH_T 500
+#define HOS_AUTH_T 400
 #define HOS_INTERVAL_NSEC 50
+
+void hos_draw_frame_whirlpool(double width, double red, double white, double r_stop, cairo_matrix_t *matrix_get, cairo_matrix_t *matrix_set)
+{
+  double a;
+
+  a = zMin( r_stop, 1 );
+  cairo_scale( cairo, a, a );
+  cairo_rotate( cairo, -PI*(1-a) );
+  cairo_get_matrix( cairo, matrix_get );
+  hos_draw_frame( width, width, red, white );
+  cairo_set_matrix( cairo, matrix_set );
+}
 
 void hos_draw(double width, double height, int count)
 {
-  double r, a;
+  double r;
   cairo_matrix_t matrix0, matrix1, matrix2, matrix3;
 
   cairo_identity_matrix( cairo );
@@ -202,29 +200,10 @@ void hos_draw(double width, double height, int count)
   if( count == 0 ) return;
   if( count > 0 && count <= HOS_T*HOS_STOP3 ){
     r = (double)count / HOS_T;
-    a = zMin( r/HOS_STOP0, 1 );
-    cairo_scale( cairo, a, a );
-    cairo_rotate( cairo, -PI*(1-a) );
-    hos_draw_frame( width/2, width/2, 0.8, 0 );
-    cairo_set_matrix( cairo, &matrix0 );
-    a = zMin( r/HOS_STOP1, 1 );
-    cairo_scale( cairo, a, a );
-    cairo_rotate( cairo, -PI*(1-a) );
-    cairo_get_matrix( cairo, &matrix1 );
-    hos_draw_frame( 2*width/11, 2*width/11, 0, 0.4 );
-    cairo_set_matrix( cairo, &matrix0 );
-    a = zMin( r/HOS_STOP2, 1 );
-    cairo_scale( cairo, a, a );
-    cairo_rotate( cairo, -PI*(1-a) );
-    cairo_get_matrix( cairo, &matrix2 );
-    hos_draw_frame( width/6, width/6, 0, 0.4 );
-    cairo_set_matrix( cairo, &matrix0 );
-    a = zMin( r/HOS_STOP3, 1 );
-    cairo_scale( cairo, a, a );
-    cairo_rotate( cairo, -PI*(1-a) );
-    cairo_get_matrix( cairo, &matrix3 );
-    hos_draw_frame( width/4, width/4, 0, 0.4 );
-    cairo_set_matrix( cairo, &matrix1 );
+    hos_draw_frame_whirlpool( width/2, 0.8, 0, r/HOS_STOP0, &matrix0, &matrix0 );
+    hos_draw_frame_whirlpool( 2*width/11, 0, 0.4, r/HOS_STOP1, &matrix1, &matrix0 );
+    hos_draw_frame_whirlpool( width/6, 0, 0.4, r/HOS_STOP2, &matrix2, &matrix0 );
+    hos_draw_frame_whirlpool( width/4, 0, 0.4, r/HOS_STOP3, &matrix3, &matrix1 );
     hos_draw_h( 2*width/11, 2*width/11, 0 );
     cairo_set_matrix( cairo, &matrix2 );
     hos_draw_o( width/6, width/6, 0 );
@@ -305,16 +284,14 @@ void *hos_anim(void *dummy)
   int count = 0;
 
   while( 1 ){
-    if( !hos_pause ){
-      if( count < HOS_T*HOS_STOP4 + HOS_LABEL_T )
-        hos_draw( zxWindowWidth( &win ), zxWindowHeight( &win ), count++ );
-      else
-      if( count < HOS_T*HOS_STOP4 + HOS_LABEL_T + HOS_AUTH_T )
-        hos_auth_draw( zxWindowWidth( &win ), zxWindowHeight( &win ), count++ - ( HOS_T*HOS_STOP4 + HOS_LABEL_T ) );
-      else
-        count = 0;
-      zxFlush();
-    }
+    if( count < HOS_T*HOS_STOP4 + HOS_LABEL_T )
+      hos_draw( zxWindowWidth( &win ), zxWindowHeight( &win ), count++ );
+    else
+    if( count < HOS_T*HOS_STOP4 + HOS_LABEL_T + HOS_AUTH_T )
+      hos_auth_draw( zxWindowWidth( &win ), zxWindowHeight( &win ), count++ - ( HOS_T*HOS_STOP4 + HOS_LABEL_T ) );
+    else
+      count = 0;
+    zxFlush();
     nanosleep( &ts, NULL );
   }
   return NULL;
@@ -328,6 +305,7 @@ int main(int argc, char** argv)
   int quit_flag = 0;
   pthread_t thread;
 
+  if( XInitThreads() == 0 ) return EXIT_FAILURE;
   zxWindowCreateAndOpen( &win, 0, 0, WIDTH, HEIGHT );
   zxWindowKeyEnable( &win );
   hos_cairo_create();
@@ -338,11 +316,11 @@ int main(int argc, char** argv)
     case Expose:
     case ConfigureNotify:
       if( zxevent.xexpose.count >= 1 ) break;
-      hos_pause = true;
+      XLockDisplay( zxdisplay );
       hos_cairo_destroy();
-      zxWindowResize( &win, zxevent.xexpose.width, zxevent.xexpose.height );
+      zxWindowMoveResizeEvent( &win );
       hos_cairo_create();
-      hos_pause = false;
+      XUnlockDisplay( zxdisplay );
       break;
     case KeyPress:
       switch( zxKeySymbol() ){
